@@ -1,6 +1,71 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Success Toast Notification -->
+@if(session('success'))
+<div id="successToast" class="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-xl border border-gray-200 w-80 animate-slide-in">
+    <div class="p-4">
+        <div class="flex items-center space-x-3">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check text-white text-sm"></i>
+                </div>
+            </div>
+            <div class="flex-1">
+                <h4 class="text-sm font-semibold text-gray-800">Success!</h4>
+                <p class="text-xs text-gray-600">{{ session('success') }}</p>
+            </div>
+            <button onclick="hideSuccessToast()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Progress Bar -->
+    <div class="h-1 bg-gray-200 rounded-b-lg overflow-hidden">
+        <div id="successProgressBar" class="h-full bg-green-500 rounded-b-lg transition-all duration-5000 ease-linear"></div>
+    </div>
+</div>
+
+<style>
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+}
+.animate-slide-in { animation: slideIn 0.3s ease-out; }
+.animate-slide-out { animation: slideOut 0.3s ease-in forwards; }
+#successProgressBar { width: 100%; animation: progressBar 5s linear forwards; }
+@keyframes progressBar {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const successToast = document.getElementById('successToast');
+    if (successToast) {
+        setTimeout(() => {
+            hideSuccessToast();
+        }, 5000);
+    }
+});
+
+function hideSuccessToast() {
+    const toast = document.getElementById('successToast');
+    if (toast) {
+        toast.classList.add('animate-slide-out');
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 300);
+    }
+}
+</script>
+@endif
+
 <div class="max-w-7xl mx-auto px-4 py-3 space-y-3">
     <!-- Header Section -->
     <div class="bg-white rounded-lg shadow p-3 border border-gray-200">

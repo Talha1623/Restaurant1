@@ -85,7 +85,7 @@ class CertificateController extends Controller
             'certificate_number' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'status' => 'required|in:active,inactive,expired,pending',
+            'status' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -98,6 +98,22 @@ class CertificateController extends Controller
 
         $data = $request->except(['certificate_file']);
 
+        // Handle status conversion: 0 = inactive, 1 = active
+        if ($request->has('status')) {
+            $status = $request->input('status');
+            if ($status === '0' || $status === 0 || $status === false || $status === 'false') {
+                $data['status'] = 'inactive';
+            } elseif ($status === '1' || $status === 1 || $status === true || $status === 'true') {
+                $data['status'] = 'active';
+            } elseif (in_array($status, ['active', 'inactive', 'expired', 'pending'])) {
+                $data['status'] = $status;
+            } else {
+                $data['status'] = 'active'; // Default to active
+            }
+        } else {
+            $data['status'] = 'active'; // Default to active if not provided
+        }
+
         // Handle file upload
         if ($request->hasFile('certificate_file')) {
             $data['certificate_file'] = $request->file('certificate_file')->store('certificates', 'public');
@@ -107,11 +123,8 @@ class CertificateController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Certificate created successfully',
-            'data' => [
-                'certificate' => $this->formatCertificate($certificate)
-            ]
-        ], 201);
+            'message' => 'Certificate created successfully'
+        ], 200);
     }
 
     /**
@@ -185,10 +198,7 @@ class CertificateController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Certificate updated successfully',
-            'data' => [
-                'certificate' => $this->formatCertificate($certificate->fresh())
-            ]
+            'message' => 'Certificate updated successfully'
         ]);
     }
 
@@ -418,10 +428,7 @@ class CertificateController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Certificate updated successfully',
-                'data' => [
-                    'certificate' => $this->formatCertificate($certificate)
-                ]
+                'message' => 'Certificate updated successfully'
             ]);
             
         } catch (\Exception $e) {
@@ -505,11 +512,7 @@ class CertificateController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Certificate deleted successfully',
-                'data' => [
-                    'deleted_certificate_id' => $certificateId,
-                    'deleted_certificate_name' => $certificate->name
-                ]
+                'message' => 'Certificate deleted successfully'
             ]);
             
         } catch (\Exception $e) {
@@ -586,8 +589,8 @@ class CertificateController extends Controller
             $query->where('type', $request->get('type'));
         }
 
-        // Get certificates with restaurant info
-        $certificates = $query->with('restaurant')->orderBy('created_at', 'desc')->get();
+        // Get certificates without restaurant info
+        $certificates = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -631,7 +634,7 @@ class CertificateController extends Controller
             'issuing_authority' => 'required|string|max:255',
             'certificate_number' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'required|in:active,inactive,expired,pending',
+            'status' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -643,13 +646,29 @@ class CertificateController extends Controller
         }
 
         $data = $request->except(['certificate_file']);
+
+        // Handle status conversion: 0 = inactive, 1 = active
+        if ($request->has('status')) {
+            $status = $request->input('status');
+            if ($status === '0' || $status === 0 || $status === false || $status === 'false') {
+                $data['status'] = 'inactive';
+            } elseif ($status === '1' || $status === 1 || $status === true || $status === 'true') {
+                $data['status'] = 'active';
+            } elseif (in_array($status, ['active', 'inactive', 'expired', 'pending'])) {
+                $data['status'] = $status;
+            } else {
+                $data['status'] = 'active'; // Default to active
+            }
+        } else {
+            $data['status'] = 'active'; // Default to active if not provided
+        }
+
         $certificate = Certificate::create($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Certificate created successfully',
-            'data' => $certificate
-        ], 201);
+            'message' => 'Certificate created successfully'
+        ], 200);
     }
 
     /**
@@ -693,8 +712,7 @@ class CertificateController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Certificate updated successfully',
-            'data' => $certificate
+            'message' => 'Certificate updated successfully'
         ]);
     }
 
@@ -758,8 +776,8 @@ class CertificateController extends Controller
             $query->where('type', $request->get('type'));
         }
 
-        // Get certificates with restaurant info - NO LIMIT, get all
-        $certificates = $query->with('restaurant')->orderBy('created_at', 'desc')->get();
+        // Get certificates without restaurant info - NO LIMIT, get all
+        $certificates = $query->orderBy('created_at', 'desc')->get();
 
         // Debug: Log the query and results
         \Log::info('Certificate List Query', [
@@ -768,14 +786,36 @@ class CertificateController extends Controller
             'certificate_ids' => $certificates->pluck('id')->toArray()
         ]);
 
+        // Check if no certificates found
+        if ($certificates->isEmpty()) {
+            return response()->json([
+                'certificatelist' => [],
+                'success' => false,
+                'message' => 'No certificates found for this restaurant'
+            ], 200);
+        }
+
+        // Format certificates list
+        $certificateList = $certificates->map(function($cert) {
+            return [
+                'certificateid' => $cert->id,
+                'certificatename' => $cert->name,
+                'certificatetype' => $cert->type,
+                'certificatenumber' => $cert->certificate_number,
+                'certificateissuer' => $cert->issuing_authority,
+                'certificateissuedate' => $cert->issue_date,
+                'certificateexpirydate' => $cert->expiry_date,
+                'certificatedescription' => $cert->description,
+                'certificatefile' => $cert->certificate_file,
+                'certificatestatus' => $cert->status,
+                'certificatecreated' => $cert->created_at->format('d, M Y h:i:s A'),
+            ];
+        });
+
         return response()->json([
+            'certificatelist' => $certificateList,
             'success' => true,
-            'message' => 'Certificates retrieved successfully',
-            'data' => $certificates,
-            'meta' => [
-                'total_count' => $certificates->count(),
-                'restaurant_id' => $request->get('restaurant_id')
-            ]
+            'message' => 'Certificates retrieved successfully'
         ]);
     }
 }

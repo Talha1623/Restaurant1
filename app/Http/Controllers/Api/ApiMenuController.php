@@ -226,9 +226,8 @@ class ApiMenuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Menu item created successfully',
-                'data' => $menu
-            ], 201);
+                'message' => 'Menu item created successfully'
+            ], 200);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -258,8 +257,7 @@ class ApiMenuController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Menu item not found',
-                'error' => $e->getMessage()
+                'message' => 'Menu item not found'
             ], 200);
         }
     }
@@ -539,9 +537,8 @@ class ApiMenuController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Menu item created successfully',
-                'data' => $menu
-            ], 201);
+                'message' => 'Menu item created successfully'
+            ], 200);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -641,8 +638,7 @@ class ApiMenuController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Menu item not found',
-                'error' => $e->getMessage()
+                'message' => 'Menu item not found'
             ], 200);
         }
     }
@@ -843,15 +839,7 @@ class ApiMenuController extends Controller
             if (!$menu) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Menu item not found',
-                    'error' => "Menu with ID {$menuId} does not exist in the database",
-                    'debug' => [
-                        'requested_id' => $menuId,
-                        'available_ids' => $allMenuIds,
-                        'total_menus' => $totalMenus,
-                        'latest_menu_id' => $latestMenu ? $latestMenu->id : 'none',
-                        'latest_menu_name' => $latestMenu ? $latestMenu->name : 'none'
-                    ]
+                    'message' => 'Menu item not found'
                 ], 200);
             }
             
@@ -987,22 +975,9 @@ class ApiMenuController extends Controller
             $menu = Menu::with(['images', 'restaurant', 'category', 'secondFlavor'])->find($menuId);
             
             if (!$menu) {
-                // Debug: Log all available menu IDs
-                $allMenuIds = Menu::pluck('id')->toArray();
-                $totalMenus = Menu::count();
-                $latestMenu = Menu::latest()->first();
-                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Menu item not found',
-                    'error' => "Menu with ID {$menuId} does not exist in the database",
-                    'debug' => [
-                        'requested_id' => $menuId,
-                        'available_ids' => $allMenuIds,
-                        'total_menus' => $totalMenus,
-                        'latest_menu_id' => $latestMenu ? $latestMenu->id : 'none',
-                        'latest_menu_name' => $latestMenu ? $latestMenu->name : 'none'
-                    ]
+                    'message' => 'Menu item not found'
                 ], 200);
             }
             

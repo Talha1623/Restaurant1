@@ -238,6 +238,82 @@ class SecondFlavorController extends Controller
     }
 
     /**
+     * Get all menus that use a specific flavor
+     */
+    public function getMenusByFlavor(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'flavour_id' => 'required|integer|exists:second_flavors,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide valid flavour ID'
+                ], 200);
+            }
+
+            $flavorId = $request->input('flavour_id');
+            $flavor = SecondFlavor::with(['menus' => function($query) {
+                $query->where('status', 'active')
+                      ->where('is_available', true);
+            }])->find($flavorId);
+
+            if (!$flavor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Flavour not found'
+                ], 200);
+            }
+
+            // Format menus
+            $formattedMenus = $flavor->menus->map(function($menu) {
+                return [
+                    'id' => $menu->id,
+                    'name' => $menu->name,
+                    'description' => $menu->description,
+                    'price' => $menu->price,
+                    'vat_price' => $menu->vat_price,
+                    'currency' => $menu->currency,
+                    'category_id' => $menu->category_id,
+                    'restaurant_id' => $menu->restaurant_id,
+                    'spice_level' => $menu->spice_level,
+                    'preparation_time' => $menu->preparation_time,
+                    'calories' => $menu->calories,
+                    'tags' => $menu->tags,
+                    'allergen' => $menu->allergen,
+                    'dietary_flags' => $menu->dietary_flags,
+                    'status' => $menu->status,
+                    'is_available' => $menu->is_available,
+                    'created_at' => $menu->created_at->format('d, M Y h:i:s A'),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Menus retrieved successfully',
+                'data' => [
+                    'flavour' => [
+                        'id' => $flavor->id,
+                        'name' => $flavor->name,
+                        'image_url' => $flavor->image ? asset('storage/' . $flavor->image) : null,
+                    ],
+                    'menus' => $formattedMenus,
+                    'total_menus' => $formattedMenus->count()
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch menus',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Format second flavor data for API response
      */
     private function formatFlavor($flavor)

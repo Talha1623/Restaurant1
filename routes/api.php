@@ -367,6 +367,7 @@ Route::prefix('second-flavors')->group(function () {
     // Public routes (no authentication required)
     Route::get('/', [SecondFlavorController::class, 'index']);  // Back to GET method
     Route::get('/{id}', [SecondFlavorController::class, 'show']);
+    Route::post('/menus', [SecondFlavorController::class, 'getMenusByFlavor']); // Get menus by flavor ID
     
     // Protected admin routes (authentication required)
     Route::middleware('auth:sanctum')->group(function () {

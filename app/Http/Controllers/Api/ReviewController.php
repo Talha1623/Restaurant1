@@ -107,7 +107,7 @@ class ReviewController extends Controller
                         'created_at_human' => $review->created_at->diffForHumans()
                     ]
                 ]
-            ], 201);
+            ], 200);
 
         } catch (QueryException $e) {
             return response()->json([

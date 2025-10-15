@@ -102,25 +102,8 @@ class RestaurantAddonController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Addon created successfully',
-                'data' => [
-                    'id' => $addon->id,
-                    'name' => $addon->name,
-                    'price' => $addon->price ? (float)$addon->price : 0,
-                    'description' => $addon->description,
-                    'image' => $addon->image,
-                    'image_url' => $addon->image ? asset('storage/' . $addon->image) : null,
-                    'is_active' => $addon->is_active,
-                    'restaurant_id' => $addon->restaurant_id,
-                    'restaurant' => [
-                        'id' => $restaurant->id,
-                        'business_name' => $restaurant->business_name,
-                        'legal_name' => $restaurant->legal_name
-                    ],
-                    'created_at' => $addon->created_at,
-                    'updated_at' => $addon->updated_at,
-                ]
-            ], 201);
+                'message' => 'Addon created successfully'
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -168,19 +151,8 @@ class RestaurantAddonController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Addon created successfully',
-                'data' => [
-                    'id' => $addon->id,
-                    'name' => $addon->name,
-                    'price' => $addon->price ? (float)$addon->price : 0,
-                    'description' => $addon->description,
-                    'image' => $addon->image,
-                    'image_url' => $addon->image ? asset('storage/' . $addon->image) : null,
-                    'is_active' => $addon->is_active,
-                    'created_at' => $addon->created_at,
-                    'updated_at' => $addon->updated_at,
-                ]
-            ], 201);
+                'message' => 'Addon created successfully'
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
