@@ -2,6 +2,31 @@
 
 @section('content')
 <div class="space-y-3 p-2">
+    <!-- Login Success Toast -->
+    @if(session('success'))
+    <div id="loginToast" class="fixed top-4 right-4 z-50 bg-white rounded-lg shadow-xl border border-gray-200 w-80 animate-slide-in">
+        <div class="p-4">
+            <div class="flex items-center space-x-3">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-sm font-semibold text-gray-800">Login Successful!</h4>
+                    <p class="text-xs text-gray-600">Welcome back to dashboard</p>
+                </div>
+                <button onclick="hideToast()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Progress Bar -->
+        <div class="h-1 bg-gray-200 rounded-b-lg overflow-hidden">
+            <div id="progressBar" class="h-full bg-green-500 rounded-b-lg transition-all duration-5000 ease-linear"></div>
+        </div>
+    </div>
+    @endif
     <!-- Header Section -->
     <div class="bg-white rounded-lg shadow p-3 border border-gray-200">
         <div class="flex items-center justify-between">
@@ -123,36 +148,36 @@
     <!-- Charts Section -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
         <!-- Restaurant Trend Chart -->
-        <div class="bg-white rounded-lg shadow p-2 border border-gray-200">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-green-600"></i>
-                    Restaurant Growth
+        <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-green-600"></i>
+                    Restaurant Distribution
                 </h3>
                 <div class="flex gap-1">
-                    <button class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">Weekly</button>
-                    <button class="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Monthly</button>
+                    <button class="px-2 py-1 text-sm bg-green-100 text-green-700 rounded">Weekly</button>
+                    <button class="px-2 py-1 text-sm bg-gray-100 text-gray-600 rounded">Monthly</button>
                 </div>
             </div>
-            <div class="h-32">
+            <div class="h-80">
                 <canvas id="restaurantChart"></canvas>
             </div>
         </div>
 
-        <!-- Rider Trend Chart -->
-        <div class="bg-white rounded-lg shadow p-2 border border-gray-200">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-chart-line text-blue-600"></i>
-                    Rider Registration
+        <!-- Combo Chart -->
+        <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-chart-mixed text-purple-600"></i>
+                    Combo Chart
                 </h3>
                 <div class="flex gap-1">
-                    <button class="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">Weekly</button>
-                    <button class="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">Monthly</button>
+                    <button class="px-2 py-1 text-sm bg-purple-100 text-purple-700 rounded">Weekly</button>
+                    <button class="px-2 py-1 text-sm bg-gray-100 text-gray-600 rounded">Monthly</button>
                 </div>
             </div>
-            <div class="h-32">
-                <canvas id="riderChart"></canvas>
+            <div class="h-80">
+                <canvas id="comboChart"></canvas>
             </div>
         </div>
     </div>
@@ -312,32 +337,59 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeCharts();
         });
     }, 1000);
+    
+    // Auto-hide login toast after 5 seconds
+    const loginToast = document.getElementById('loginToast');
+    if (loginToast) {
+        setTimeout(() => {
+            hideToast();
+        }, 5000);
+    }
 });
+
+// Function to hide the login toast
+function hideToast() {
+    const toast = document.getElementById('loginToast');
+    if (toast) {
+        toast.classList.add('animate-slide-out');
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 300);
+    }
+}
 
 function initializeCharts() {
     // Get chart elements
     const restaurantCtx = document.getElementById('restaurantChart');
-    const riderCtx = document.getElementById('riderChart');
+    const comboCtx = document.getElementById('comboChart');
     
     // Sample data for charts
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const restaurantData = [12, 19, 15, 25, 22, 30];
     const riderData = [8, 12, 15, 18, 22, 28];
+    const customerData = [15, 25, 20, 30, 35, 40];
     
-    // Restaurant Chart
+    // Restaurant Chart - Pie Chart
     if (restaurantCtx && typeof Chart !== 'undefined') {
         new Chart(restaurantCtx, {
-            type: 'bar',
+            type: 'pie',
             data: {
-                labels: labels,
+                labels: ['Active Restaurants', 'Inactive Restaurants', 'New This Week', 'Pending Approval'],
                 datasets: [{
-                    label: 'New Restaurants',
-                    data: restaurantData,
-                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                    borderColor: 'rgb(34, 197, 94)',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false,
+                    data: [{{ $activeRestaurants }}, {{ $inactiveRestaurants }}, {{ $restaurantData[6] ?? 0 }}, 5],
+                    backgroundColor: [
+                        'rgba(34, 197, 94, 0.8)',   // Green for Active
+                        'rgba(239, 68, 68, 0.8)',    // Red for Inactive
+                        'rgba(59, 130, 246, 0.8)',   // Blue for New
+                        'rgba(245, 158, 11, 0.8)'    // Orange for Pending
+                    ],
+                    borderColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(239, 68, 68)',
+                        'rgb(59, 130, 246)',
+                        'rgb(245, 158, 11)'
+                    ],
+                    borderWidth: 2
                 }]
             },
             options: {
@@ -349,19 +401,25 @@ function initializeCharts() {
                 },
                 plugins: {
                     legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.1)'
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
                         }
                     },
-                    x: {
-                        grid: {
-                            display: false
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
                         }
                     }
                 }
@@ -369,26 +427,54 @@ function initializeCharts() {
         });
     }
     
-    // Rider Chart
-    if (riderCtx && typeof Chart !== 'undefined') {
-        new Chart(riderCtx, {
-            type: 'line',
+    // Combo Chart
+    if (comboCtx && typeof Chart !== 'undefined') {
+        new Chart(comboCtx, {
+            type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'New Riders',
-                    data: riderData,
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 3,
-                    pointBackgroundColor: 'rgb(59, 130, 246)',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
-                }]
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Restaurants',
+                        data: restaurantData,
+                        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                        borderColor: 'rgb(34, 197, 94)',
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    },
+                    {
+                        type: 'line',
+                        label: 'Riders',
+                        data: riderData,
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    },
+                    {
+                        type: 'line',
+                        label: 'Customers',
+                        data: customerData,
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        fill: false,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgb(168, 85, 247)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -399,7 +485,15 @@ function initializeCharts() {
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -420,5 +514,53 @@ function initializeCharts() {
     }
 }
 </script>
+
+<style>
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+.animate-slide-out {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+/* Progress bar animation */
+#progressBar {
+    width: 100%;
+    animation: progressBar 5s linear forwards;
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+</style>
 @endpush
+    
     

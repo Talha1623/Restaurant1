@@ -53,7 +53,7 @@ class ReviewController extends Controller
                     'success' => false,
                     'message' => 'Customer not found',
                     'debug_customer_id' => $request->customer_id
-                ], 404);
+                ], 200);
             }
 
             // Check if restaurant exists
@@ -63,7 +63,7 @@ class ReviewController extends Controller
                     'success' => false,
                     'message' => 'Restaurant not found',
                     'debug_restaurant_id' => $request->restaurant_id
-                ], 404);
+                ], 200);
             }
 
             // Check if customer already reviewed this restaurant
@@ -140,7 +140,7 @@ class ReviewController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Restaurant not found'
-                ], 404);
+                ], 200);
             }
 
             // Get reviews with customer information
@@ -202,7 +202,7 @@ class ReviewController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Review not found'
-                ], 404);
+                ], 200);
             }
 
             return response()->json([
@@ -245,7 +245,7 @@ class ReviewController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Review not found'
-                ], 404);
+                ], 200);
             }
 
             // Validation
@@ -305,7 +305,7 @@ class ReviewController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Review not found'
-                ], 404);
+                ], 200);
             }
 
             $review->delete();

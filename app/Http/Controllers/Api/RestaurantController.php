@@ -252,7 +252,7 @@ class RestaurantController extends Controller
                     'success' => false,
                     'message' => 'Restaurant not found',
                     'error' => "Restaurant with ID {$restaurantId} does not exist in the database"
-                ], 404);
+                ], 200);
             }
 
             // STEP 3: Add menus + certificates (with debug)
@@ -363,7 +363,7 @@ class RestaurantController extends Controller
                         'latest_restaurant_id' => $latestRestaurant ? $latestRestaurant->id : 'none',
                         'latest_restaurant_name' => $latestRestaurant ? $latestRestaurant->business_name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
 
             return response()->json([

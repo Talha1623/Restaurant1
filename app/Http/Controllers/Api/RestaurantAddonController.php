@@ -67,9 +67,8 @@ class RestaurantAddonController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and addon details to create addon'
+                ], 200);
             }
 
             // Retrieve the restaurant_id from the request body
@@ -150,9 +149,8 @@ class RestaurantAddonController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and addon details to create addon'
+                ], 200);
             }
 
             $data = $request->all();
@@ -248,9 +246,8 @@ class RestaurantAddonController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and addon details to create addon'
+                ], 200);
             }
 
             $data = $request->all();

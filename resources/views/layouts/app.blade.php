@@ -245,7 +245,7 @@ body { font-family: 'Poppins', sans-serif; }
 /* Top Navbar */
 .top-nav {
     display: flex; justify-content: flex-end; align-items: center; gap: 1rem;
-    background: white; padding: 0.5rem 1.5rem;
+    background: #083344; padding: 0.5rem 1.5rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     position: sticky; top: 0; z-index: 50;
 }
@@ -254,9 +254,9 @@ body { font-family: 'Poppins', sans-serif; }
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.35rem 0.75rem; border-radius: 0.375rem;
     background: none; font-size: 0.85rem; font-weight: 500;
-    cursor: pointer; transition: all 0.2s ease;
+    cursor: pointer; transition: all 0.2s ease; color: white;
 }
-.dropdown-btn:hover { background: #f3f4f6; }
+.dropdown-btn:hover { background: rgba(255, 255, 255, 0.1); }
 .dropdown-btn i.fas.fa-user-circle { background: none !important; color: #00d03c; }
 .dropdown-menu {
     display: none; position: absolute; right: 0; top: 110%;

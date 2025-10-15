@@ -51,9 +51,8 @@ class RestaurantAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Email already exists',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'An account with this email address already exists. Please use a different email or try logging in.'
+                ], 200);
             }
 
             $data = $request->all();
@@ -124,7 +123,7 @@ class RestaurantAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $data = $request->all();
@@ -205,9 +204,8 @@ class RestaurantAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Invalid email or password'
+                ], 200);
             }
 
             $restaurant = Restaurant::where('email', $request->email)->first();
@@ -216,7 +214,7 @@ class RestaurantAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid email or password'
-                ], 401);
+                ], 200);
             }
 
             // Check if restaurant is active
@@ -224,7 +222,7 @@ class RestaurantAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Your restaurant account is currently inactive. Please contact our support team to reactivate your account. Email us at test@example.com or Call our helpline at 123-456-7890.'
-                ], 403);
+                ], 200);
             }
 
             // Check if restaurant is blocked (safe check)
@@ -232,7 +230,7 @@ class RestaurantAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Your restaurant account has been blocked due to violations of our policies. For more details or to resolve the issue, please Email us at test@example.com or Call our helpline at 123-456-7890.'
-                ], 403);
+                ], 200);
             }
 
             $token = $restaurant->createToken('restaurant-token')->plainTextToken;
@@ -334,9 +332,8 @@ class RestaurantAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Email not found'
+                ], 200);
             }
 
             $restaurant = Restaurant::where('email', $request->email)->first();
@@ -354,7 +351,7 @@ class RestaurantAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Your restaurant account has been blocked due to violations of our policies. For more details or to resolve the issue, please Email us at test@example.com or Call our helpline at 123-456-7890.'
-                ], 403);
+                ], 200);
             }
 
             // Generate reset token
@@ -369,10 +366,7 @@ class RestaurantAuthController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Password reset link has been sent to your email address. Please check your inbox and follow the instructions to reset your password.',
-                'data' => [
-                    'reset_token' => $resetToken, // Remove this in production
-                    'expires_at' => $restaurant->reset_token_expires_at
-                ]
+              
             ]);
 
         } catch (Exception $e) {
@@ -398,9 +392,8 @@ class RestaurantAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Email not found'
+                ], 200);
             }
 
             $restaurant = Restaurant::where('email', $request->email)

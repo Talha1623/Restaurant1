@@ -40,7 +40,7 @@ class RiderAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $data = $request->except(['password', 'password_confirmation', 'photo']);
@@ -96,7 +96,7 @@ class RiderAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $rider = Rider::where('email', $request->email)->first();
@@ -121,7 +121,13 @@ class RiderAuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Login successful',
+                'message' => '🎉 Welcome back! Login successful',
+                'alert' => [
+                    'type' => 'success',
+                    'title' => 'Login Successful!',
+                    'message' => 'Welcome back to your rider dashboard',
+                    'icon' => '✅'
+                ],
                 'data' => [
                     'rider' => $this->formatRider($rider),
                     'token' => $token
@@ -213,7 +219,7 @@ class RiderAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $data = $request->except(['photo', 'password', 'status', 'vehicle_type']);
@@ -262,7 +268,7 @@ class RiderAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $rider = $request->user();
@@ -313,7 +319,7 @@ class RiderAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             $rider = $request->user();
@@ -363,7 +369,7 @@ class RiderAuthController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'No documents provided'
-                ], 422);
+                ], 200);
             }
 
             $rider->update($data);
@@ -398,9 +404,8 @@ class RiderAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Email not found'
+                ], 200);
             }
 
             // Here you would send password reset email

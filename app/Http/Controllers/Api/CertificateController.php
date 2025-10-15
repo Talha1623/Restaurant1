@@ -93,7 +93,7 @@ class CertificateController extends Controller
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
-            ], 422);
+            ], 200);
         }
 
         $data = $request->except(['certificate_file']);
@@ -125,7 +125,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -147,7 +147,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         $validator = Validator::make($request->all(), [
@@ -167,7 +167,7 @@ class CertificateController extends Controller
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
-            ], 422);
+            ], 200);
         }
 
         $data = $request->except(['certificate_file']);
@@ -203,7 +203,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         // Delete file if exists
@@ -264,10 +264,8 @@ class CertificateController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                    'debug_request_data' => $requestData
-                ], 422);
+                    'message' => 'Certificate ID is required to view certificate details'
+                ], 200);
             }
 
             // Retrieve the certificate by ID from the request body
@@ -300,7 +298,7 @@ class CertificateController extends Controller
                         'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
                         'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
             
             return response()->json([
@@ -352,10 +350,8 @@ class CertificateController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                    'debug_request_data' => $requestData
-                ], 422);
+                    'message' => 'Certificate ID is required to view certificate details'
+                ], 200);
             }
 
             // Retrieve the certificate by ID from the request body
@@ -391,7 +387,7 @@ class CertificateController extends Controller
                         'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
                         'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
 
             $data = $request->except(['id', 'certificate_file', 'image']);
@@ -459,10 +455,8 @@ class CertificateController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                    'debug_request_data' => $requestData
-                ], 422);
+                    'message' => 'Certificate ID is required to view certificate details'
+                ], 200);
             }
 
             // Retrieve the certificate by ID from the request body
@@ -498,7 +492,7 @@ class CertificateController extends Controller
                         'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
                         'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
 
             // Delete certificate file if exists
@@ -613,7 +607,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         return response()->json([
@@ -645,7 +639,7 @@ class CertificateController extends Controller
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
-            ], 422);
+            ], 200);
         }
 
         $data = $request->except(['certificate_file']);
@@ -669,7 +663,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         $validator = Validator::make($request->all(), [
@@ -688,7 +682,7 @@ class CertificateController extends Controller
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors()
-            ], 422);
+            ], 200);
         }
 
         $certificate->update($request->only([
@@ -715,7 +709,7 @@ class CertificateController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Certificate not found'
-            ], 404);
+            ], 200);
         }
 
         // Delete file if exists

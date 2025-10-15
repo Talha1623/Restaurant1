@@ -26,9 +26,8 @@ class CustomerAuthController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Invalid email or password'
+                ], 200);
             }
 
             // Find customer by email
@@ -155,7 +154,7 @@ class CustomerAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             // Update customer data
@@ -208,7 +207,7 @@ class CustomerAuthController extends Controller
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $validator->errors()
-                ], 422);
+                ], 200);
             }
 
             // Check current password

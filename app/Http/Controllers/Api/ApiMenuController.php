@@ -177,9 +177,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $data = $request->all();
@@ -261,7 +260,7 @@ class ApiMenuController extends Controller
                 'success' => false,
                 'message' => 'Menu item not found',
                 'error' => $e->getMessage()
-            ], 404);
+            ], 200);
         }
     }
 
@@ -302,9 +301,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $data = $request->all();
@@ -491,9 +489,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $restaurantId = $request->restaurant_id;
@@ -646,7 +643,7 @@ class ApiMenuController extends Controller
                 'success' => false,
                 'message' => 'Menu item not found',
                 'error' => $e->getMessage()
-            ], 404);
+            ], 200);
         }
     }
 
@@ -685,9 +682,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $data = $request->all();
@@ -816,10 +812,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                    'debug_request_data' => $requestData
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             // Retrieve the menu by ID from the request body
@@ -858,7 +852,7 @@ class ApiMenuController extends Controller
                         'latest_menu_id' => $latestMenu ? $latestMenu->id : 'none',
                         'latest_menu_name' => $latestMenu ? $latestMenu->name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
             
             // Optional: Check if menu belongs to authenticated restaurant (if needed)
@@ -870,7 +864,7 @@ class ApiMenuController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Menu item not found or access denied'
-                ], 404);
+                ], 200);
             }
             */
 
@@ -941,9 +935,8 @@ class ApiMenuController extends Controller
         } catch (\Illuminate\Validation\ValidationException $ve) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $ve->errors()
-            ], 422);
+                'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+            ], 200);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -976,10 +969,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors(),
-                    'debug_request_data' => $requestData
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             // Retrieve the menu by ID from the request body
@@ -1012,7 +1003,7 @@ class ApiMenuController extends Controller
                         'latest_menu_id' => $latestMenu ? $latestMenu->id : 'none',
                         'latest_menu_name' => $latestMenu ? $latestMenu->name : 'none'
                     ]
-                ], 404);
+                ], 200);
             }
             
             return response()->json([
@@ -1042,9 +1033,16 @@ class ApiMenuController extends Controller
 {
     try {
         // Validate the incoming request to ensure 'id' is present
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'id' => 'required|integer|exists:menus,id'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Menu ID is required to delete menu item'
+            ], 200);
+        }
 
         // Retrieve the menu by ID from the request
         $menuId = $request->input('id');
@@ -1176,9 +1174,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $secondFlavorId = $request->input('second_flavor_id');
@@ -1284,9 +1281,8 @@ class ApiMenuController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                ], 200);
             }
 
             $categoryId = $request->input('category_id');
