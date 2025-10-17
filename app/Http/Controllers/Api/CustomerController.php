@@ -36,11 +36,13 @@ class CustomerController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => $firstError
+                ], 200);
             }
 
             // Create customer data
@@ -199,11 +201,13 @@ class CustomerController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => $firstError
+                ], 200);
             }
 
             // Update customer data

@@ -323,4 +323,156 @@ class RestaurantAddonController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get addons list using POST with restaurant_id in body
+     */
+    public function getAddonsList(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'restaurant_id' => 'required|integer|exists:restaurants,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide valid restaurant ID'
+                ], 200);
+            }
+
+            $restaurantId = $request->input('restaurant_id');
+            $restaurant = Restaurant::findOrFail($restaurantId);
+            
+            $addons = RestaurantAddon::where('restaurant_id', $restaurantId)
+                ->orderBy('name')
+                ->get()
+                ->map(function($addon) {
+                    return [
+                        'addonid' => $addon->id,
+                        'addonname' => $addon->name,
+                        'addonprice' => $addon->price ? (float)$addon->price : 0,
+                        'addondescription' => $addon->description,
+                        'addonimage' => $addon->image,
+                        'addonstatus' => $addon->is_active,
+                        'addoncreated' => $addon->created_at->format('d, M Y h:i:s A'),
+                    ];
+                });
+
+            return response()->json([
+                'addonlist' => $addons,
+                'success' => true,
+                'message' => 'Addons retrieved successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving addons: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update addon with ID in request body (POST method)
+     */
+    public function updateWithIdInBody(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'id' => 'required|integer|exists:restaurant_addons,id',
+                'name' => 'sometimes|required|string|max:255',
+                'price' => 'nullable|numeric|min:0',
+                'description' => 'nullable|string|max:1000',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'is_active' => 'nullable'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide valid addon ID'
+                ], 200);
+            }
+
+            $addonId = $request->input('id');
+            $addon = RestaurantAddon::findOrFail($addonId);
+
+            $data = $request->except(['id', 'image']);
+
+            // Handle is_active conversion: 0 = false, 1 = true
+            if ($request->has('is_active')) {
+                $isActive = $request->input('is_active');
+                if ($isActive === '0' || $isActive === 0 || $isActive === false || $isActive === 'false') {
+                    $data['is_active'] = false;
+                } elseif ($isActive === '1' || $isActive === 1 || $isActive === true || $isActive === 'true') {
+                    $data['is_active'] = true;
+                } else {
+                    $data['is_active'] = (bool)$isActive;
+                }
+            }
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                // Delete old image
+                if ($addon->image) {
+                    Storage::disk('public')->delete($addon->image);
+                }
+                $data['image'] = $request->file('image')->store('restaurant-addons', 'public');
+            }
+
+            $addon->update($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Addon updated successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update addon'
+            ], 200);
+        }
+    }
+
+    /**
+     * Delete addon with ID in request body (POST method)
+     */
+    public function deleteWithIdInBody(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'id' => 'required|integer|exists:restaurant_addons,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide valid addon ID'
+                ], 200);
+            }
+
+            $addonId = $request->input('id');
+            $addon = RestaurantAddon::findOrFail($addonId);
+
+            // Delete image if exists
+            if ($addon->image) {
+                Storage::disk('public')->delete($addon->image);
+            }
+
+            $addon->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Addon deleted successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete addon'
+            ], 200);
+        }
+    }
 }

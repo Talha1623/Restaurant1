@@ -160,7 +160,7 @@ class ApiMenuController extends Controller
                 'currency' => 'required|string|in:GBP,USD,EUR,PKR',
                 'category_id' => 'required|integer|exists:menu_categories,id',
                 'second_flavor_id' => 'nullable|integer|exists:second_flavors,id',
-                'status' => 'required|in:active,inactive',
+                'status' => 'nullable',
                 'is_available' => 'boolean',
                 'spice_level' => 'nullable|integer|min:0|max:5',
                 'preparation_time' => 'nullable|integer|min:0|max:300',
@@ -184,8 +184,35 @@ class ApiMenuController extends Controller
             $data = $request->all();
             $data['restaurant_id'] = $restaurantId;
             
-            // Handle availability checkbox
-            $data['is_available'] = $request->has('is_available') ? true : false;
+            // Handle status conversion: 0 = inactive, 1 = active
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                if ($status === '0' || $status === 0 || $status === false || $status === 'false') {
+                    $data['status'] = 'inactive';
+                } elseif ($status === '1' || $status === 1 || $status === true || $status === 'true') {
+                    $data['status'] = 'active';
+                } elseif (in_array($status, ['active', 'inactive'])) {
+                    $data['status'] = $status;
+                } else {
+                    $data['status'] = 'active'; // Default to active
+                }
+            } else {
+                $data['status'] = 'active'; // Default to active if not provided
+            }
+            
+            // Handle availability conversion: 0 = false, 1 = true
+            if ($request->has('is_available')) {
+                $availability = $request->input('is_available');
+                if ($availability === '0' || $availability === 0 || $availability === false || $availability === 'false') {
+                    $data['is_available'] = false;
+                } elseif ($availability === '1' || $availability === 1 || $availability === true || $availability === 'true') {
+                    $data['is_available'] = true;
+                } else {
+                    $data['is_available'] = (bool)$availability;
+                }
+            } else {
+                $data['is_available'] = true; // Default to true (available)
+            }
             
             // Handle tags - convert comma-separated string to array
             if ($request->filled('tags')) {
@@ -470,7 +497,7 @@ class ApiMenuController extends Controller
                 'currency' => 'required|string|in:GBP,USD,EUR,PKR',
                 'category_id' => 'required|integer|exists:menu_categories,id',
                 'second_flavor_id' => 'nullable|integer|exists:second_flavors,id',
-                'status' => 'required|in:active,inactive',
+                'status' => 'nullable',
                 'is_available' => 'boolean',
                 'spice_level' => 'nullable|integer|min:0|max:5',
                 'preparation_time' => 'nullable|integer|min:0|max:300',
@@ -495,8 +522,35 @@ class ApiMenuController extends Controller
             $data = $request->all();
             $data['restaurant_id'] = $restaurantId;
             
-            // Handle availability checkbox
-            $data['is_available'] = $request->has('is_available') ? true : false;
+            // Handle status conversion: 0 = inactive, 1 = active
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                if ($status === '0' || $status === 0 || $status === false || $status === 'false') {
+                    $data['status'] = 'inactive';
+                } elseif ($status === '1' || $status === 1 || $status === true || $status === 'true') {
+                    $data['status'] = 'active';
+                } elseif (in_array($status, ['active', 'inactive'])) {
+                    $data['status'] = $status;
+                } else {
+                    $data['status'] = 'active'; // Default to active
+                }
+            } else {
+                $data['status'] = 'active'; // Default to active if not provided
+            }
+            
+            // Handle availability conversion: 0 = false, 1 = true
+            if ($request->has('is_available')) {
+                $availability = $request->input('is_available');
+                if ($availability === '0' || $availability === 0 || $availability === false || $availability === 'false') {
+                    $data['is_available'] = false;
+                } elseif ($availability === '1' || $availability === 1 || $availability === true || $availability === 'true') {
+                    $data['is_available'] = true;
+                } else {
+                    $data['is_available'] = (bool)$availability;
+                }
+            } else {
+                $data['is_available'] = true; // Default to true (available)
+            }
             
             // Handle tags - convert comma-separated string to array
             if ($request->filled('tags')) {

@@ -78,10 +78,10 @@ class CertificateController extends Controller
         $validator = Validator::make($request->all(), [
             'restaurant_id' => 'required|exists:restaurants,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|string|max:255',
+            'type' => 'required', // Accept both ID and text
             'issue_date' => 'required|date',
             'expiry_date' => 'nullable|date|after:issue_date',
-            'issuing_authority' => 'required|string|max:255',
+            'issuing_authority' => 'required', // Accept both ID and text
             'certificate_number' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -97,6 +97,32 @@ class CertificateController extends Controller
         }
 
         $data = $request->except(['certificate_file']);
+
+        // Handle type conversion: If ID provided, get the name
+        if ($request->has('type')) {
+            $typeValue = $request->input('type');
+            // Check if it's a numeric ID
+            if (is_numeric($typeValue)) {
+                $certType = \App\Models\CertificateType::find($typeValue);
+                if ($certType) {
+                    $data['type'] = $certType->name;
+                }
+            }
+            // If it's text, keep it as is (already in $data)
+        }
+
+        // Handle issuing_authority conversion: If ID provided, get the name
+        if ($request->has('issuing_authority')) {
+            $issuingAuth = $request->input('issuing_authority');
+            // Check if it's a numeric ID
+            if (is_numeric($issuingAuth)) {
+                $authority = \App\Models\IssuingAuthority::find($issuingAuth);
+                if ($authority) {
+                    $data['issuing_authority'] = $authority->name;
+                }
+            }
+            // If it's text, keep it as is (already in $data)
+        }
 
         // Handle status conversion: 0 = inactive, 1 = active
         if ($request->has('status')) {
@@ -299,24 +325,29 @@ class CertificateController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Certificate not found',
-                    'error' => "Certificate with ID {$certificateId} does not exist in the database",
-                    'debug' => [
-                        'requested_id' => $certificateId,
-                        'available_ids' => $allCertificateIds,
-                        'total_certificates' => $totalCertificates,
-                        'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
-                        'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
-                    ]
+                    'message' => 'Certificate not found'
                 ], 200);
             }
             
+            // Format single certificate as list format
+            $certificateData = [
+                'certificateid' => $certificate->id,
+                'certificatename' => $certificate->name,
+                'certificatetype' => $certificate->type,
+                'certificatenumber' => $certificate->certificate_number,
+                'certificateissuer' => $certificate->issuing_authority,
+                'certificateissuedate' => $certificate->issue_date,
+                'certificateexpirydate' => $certificate->expiry_date,
+                'certificatedescription' => $certificate->description,
+                'certificatefile' => $certificate->certificate_file,
+                'certificatestatus' => $certificate->status,
+                'certificatecreated' => $certificate->created_at->format('d, M Y h:i:s A'),
+            ];
+
             return response()->json([
+                'certificatelist' => [$certificateData],
                 'success' => true,
-                'message' => 'Certificate retrieved successfully',
-                'data' => [
-                    'certificate' => $this->formatCertificate($certificate)
-                ]
+                'message' => 'Certificate retrieved successfully'
             ]);
             
         } catch (\Exception $e) {
@@ -346,15 +377,15 @@ class CertificateController extends Controller
             $validator = Validator::make($request->all(), [
                 'id' => 'required|integer',
                 'name' => 'sometimes|required|string|max:255',
-                'type' => 'sometimes|required|string|max:255',
+                'type' => 'sometimes|required', // Accept both ID and text
                 'issue_date' => 'sometimes|required|date',
                 'expiry_date' => 'nullable|date|after:issue_date',
-                'issuing_authority' => 'sometimes|required|string|max:255',
+                'issuing_authority' => 'sometimes|required', // Accept both ID and text
                 'certificate_number' => 'nullable|string|max:255',
                 'description' => 'nullable|string',
                 'certificate_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
                 'image' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-                'status' => 'sometimes|required|in:active,inactive,expired,pending',
+                'status' => 'sometimes|nullable',
             ]);
 
             if ($validator->fails()) {
@@ -388,19 +419,45 @@ class CertificateController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Certificate not found',
-                    'error' => "Certificate with ID {$certificateId} does not exist in the database",
-                    'debug' => [
-                        'requested_id' => $certificateId,
-                        'available_ids' => $allCertificateIds,
-                        'total_certificates' => $totalCertificates,
-                        'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
-                        'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
-                    ]
+                    'message' => 'Certificate not found'
                 ], 200);
             }
 
-            $data = $request->except(['id', 'certificate_file', 'image']);
+            $data = $request->except(['id', 'certificate_file', 'image', 'restaurant_id']);
+
+            // Handle type conversion: If ID provided, get the name
+            if ($request->has('type')) {
+                $typeValue = $request->input('type');
+                if (is_numeric($typeValue)) {
+                    $certType = \App\Models\CertificateType::find($typeValue);
+                    if ($certType) {
+                        $data['type'] = $certType->name;
+                    }
+                }
+            }
+
+            // Handle issuing_authority conversion: If ID provided, get the name
+            if ($request->has('issuing_authority')) {
+                $issuingAuth = $request->input('issuing_authority');
+                if (is_numeric($issuingAuth)) {
+                    $authority = \App\Models\IssuingAuthority::find($issuingAuth);
+                    if ($authority) {
+                        $data['issuing_authority'] = $authority->name;
+                    }
+                }
+            }
+
+            // Handle status conversion: 0 = inactive, 1 = active
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                if ($status === '0' || $status === 0 || $status === false || $status === 'false') {
+                    $data['status'] = 'inactive';
+                } elseif ($status === '1' || $status === 1 || $status === true || $status === 'true') {
+                    $data['status'] = 'active';
+                } elseif (in_array($status, ['active', 'inactive', 'expired', 'pending'])) {
+                    $data['status'] = $status;
+                }
+            }
 
             // Handle file upload
             if ($request->hasFile('certificate_file')) {
@@ -434,14 +491,8 @@ class CertificateController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update certificate',
-                'error' => $e->getMessage(),
-                'debug' => [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString()
-                ]
-            ], 500);
+                'message' => 'Failed to update certificate'
+            ], 200);
         }
     }
 
@@ -490,15 +541,7 @@ class CertificateController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Certificate not found',
-                    'error' => "Certificate with ID {$certificateId} does not exist in the database",
-                    'debug' => [
-                        'requested_id' => $certificateId,
-                        'available_ids' => $allCertificateIds,
-                        'total_certificates' => $totalCertificates,
-                        'latest_certificate_id' => $latestCertificate ? $latestCertificate->id : 'none',
-                        'latest_certificate_name' => $latestCertificate ? $latestCertificate->name : 'none'
-                    ]
+                    'message' => 'Certificate not found'
                 ], 200);
             }
 
@@ -613,10 +656,25 @@ class CertificateController extends Controller
             ], 200);
         }
 
+        // Format single certificate as list format
+        $certificateData = [
+            'certificateid' => $certificate->id,
+            'certificatename' => $certificate->name,
+            'certificatetype' => $certificate->type,
+            'certificatenumber' => $certificate->certificate_number,
+            'certificateissuer' => $certificate->issuing_authority,
+            'certificateissuedate' => $certificate->issue_date,
+            'certificateexpirydate' => $certificate->expiry_date,
+            'certificatedescription' => $certificate->description,
+            'certificatefile' => $certificate->certificate_file,
+            'certificatestatus' => $certificate->status,
+            'certificatecreated' => $certificate->created_at->format('d, M Y h:i:s A'),
+        ];
+
         return response()->json([
+            'certificatelist' => [$certificateData],
             'success' => true,
-            'message' => 'Certificate retrieved successfully',
-            'data' => $certificate
+            'message' => 'Certificate retrieved successfully'
         ]);
     }
 
@@ -628,10 +686,10 @@ class CertificateController extends Controller
         $validator = Validator::make($request->all(), [
             'restaurant_id' => 'required|exists:restaurants,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|string|max:255',
+            'type' => 'required', // Accept both ID and text
             'issue_date' => 'required|date',
             'expiry_date' => 'nullable|date|after:issue_date',
-            'issuing_authority' => 'required|string|max:255',
+            'issuing_authority' => 'required', // Accept both ID and text
             'certificate_number' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'status' => 'nullable',
@@ -646,6 +704,32 @@ class CertificateController extends Controller
         }
 
         $data = $request->except(['certificate_file']);
+
+        // Handle type conversion: If ID provided, get the name
+        if ($request->has('type')) {
+            $typeValue = $request->input('type');
+            // Check if it's a numeric ID
+            if (is_numeric($typeValue)) {
+                $certType = \App\Models\CertificateType::find($typeValue);
+                if ($certType) {
+                    $data['type'] = $certType->name;
+                }
+            }
+            // If it's text, keep it as is (already in $data)
+        }
+
+        // Handle issuing_authority conversion: If ID provided, get the name
+        if ($request->has('issuing_authority')) {
+            $issuingAuth = $request->input('issuing_authority');
+            // Check if it's a numeric ID
+            if (is_numeric($issuingAuth)) {
+                $authority = \App\Models\IssuingAuthority::find($issuingAuth);
+                if ($authority) {
+                    $data['issuing_authority'] = $authority->name;
+                }
+            }
+            // If it's text, keep it as is (already in $data)
+        }
 
         // Handle status conversion: 0 = inactive, 1 = active
         if ($request->has('status')) {

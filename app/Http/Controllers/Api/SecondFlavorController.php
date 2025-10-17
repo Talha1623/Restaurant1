@@ -99,11 +99,13 @@ class SecondFlavorController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => $firstError
+                ], 200);
             }
 
             $data = [
@@ -146,11 +148,13 @@ class SecondFlavorController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => $firstError
+                ], 200);
             }
 
             $data = [
@@ -322,7 +326,6 @@ class SecondFlavorController extends Controller
             'id' => $flavor->id,
             'name' => $flavor->name,
             'image' => $flavor->image,
-            'image_url' => $flavor->image ? asset('storage/' . $flavor->image) : null,
             'is_active' => $flavor->is_active,
             'created_at' => $flavor->created_at,
             'updated_at' => $flavor->updated_at

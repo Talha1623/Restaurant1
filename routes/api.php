@@ -65,6 +65,12 @@ Route::prefix('admin')->group(function () {
 Route::prefix('addons')->middleware('auth:sanctum')->group(function () {
     // Addon create with restaurant_id in form-data
     Route::post('/create', [App\Http\Controllers\Api\RestaurantAddonController::class, 'storeWithIdInBody']);
+    // Addon list with restaurant_id in form-data
+    Route::post('/list', [App\Http\Controllers\Api\RestaurantAddonController::class, 'getAddonsList']);
+    // Addon update with id in form-data
+    Route::post('/update', [App\Http\Controllers\Api\RestaurantAddonController::class, 'updateWithIdInBody']);
+    // Addon delete with id in form-data
+    Route::post('/delete', [App\Http\Controllers\Api\RestaurantAddonController::class, 'deleteWithIdInBody']);
 });
 
 // Restaurant Management API Routes (Global - restaurant_id in form-data)

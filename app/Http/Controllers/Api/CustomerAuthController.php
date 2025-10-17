@@ -24,9 +24,12 @@ class CustomerAuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid email or password'
+                    'message' => $firstError
                 ], 200);
             }
 
@@ -150,10 +153,12 @@ class CustomerAuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'message' => $firstError
                 ], 200);
             }
 
@@ -203,10 +208,12 @@ class CustomerAuthController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'message' => $firstError
                 ], 200);
             }
 

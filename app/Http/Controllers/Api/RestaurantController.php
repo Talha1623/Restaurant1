@@ -78,11 +78,13 @@ class RestaurantController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $errors = $validator->errors();
+            $firstError = $errors->first();
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => $firstError
+            ], 200);
         }
 
         $data = $request->all();
@@ -236,11 +238,13 @@ class RestaurantController extends Controller
             ]);
 
             if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+                    'message' => $firstError
+                ], 200);
             }
 
             // Retrieve the restaurant ID from the request body
@@ -446,11 +450,13 @@ class RestaurantController extends Controller
         ]);
 
         if ($validator->fails()) {
+            $errors = $validator->errors();
+            $firstError = $errors->first();
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => $firstError
+            ], 200);
         }
 
         $data = $request->all();
