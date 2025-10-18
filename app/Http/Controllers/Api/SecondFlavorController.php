@@ -325,10 +325,7 @@ class SecondFlavorController extends Controller
         return [
             'id' => $flavor->id,
             'name' => $flavor->name,
-            'image' => $flavor->image,
-            'is_active' => $flavor->is_active,
-            'created_at' => $flavor->created_at,
-            'updated_at' => $flavor->updated_at
+            'image' => $flavor->image ? asset('storage/' . $flavor->image) : null
         ];
     }
 }

@@ -32,6 +32,10 @@ class Menu extends Model
         'restaurant_id'
     ];
 
+    protected $hidden = [
+        'cold_drinks_addons' // Hide from API responses
+    ];
+
     protected $casts = [
         'price' => 'decimal:2',
         'vat_price' => 'decimal:2',
@@ -131,5 +135,15 @@ class Menu extends Model
     public function primaryImage(): HasMany
     {
         return $this->hasMany(MenuImage::class)->where('is_primary', true);
+    }
+
+    /**
+     * Get the addons for the menu item.
+     */
+    public function addons(): BelongsToMany
+    {
+        return $this->belongsToMany(RestaurantAddon::class, 'menu_addon', 'menu_id', 'restaurant_addon_id')
+                    ->withTimestamps()
+                    ->select(['restaurant_addons.id', 'restaurant_addons.name', 'restaurant_addons.price', 'restaurant_addons.image']);
     }
 }

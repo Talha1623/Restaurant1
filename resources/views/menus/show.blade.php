@@ -268,6 +268,37 @@
                     </div>
                 @endif
 
+                <!-- Menu Addons -->
+                @if($menu->addons && count($menu->addons) > 0)
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Available Addons</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            @foreach($menu->addons as $addon)
+                                <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        @if($addon->image)
+                                            <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->name }}" class="w-8 h-8 rounded-full mr-3 object-cover">
+                                        @else
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+                                                <i class="fas fa-plus text-gray-400 text-sm"></i>
+                                            </div>
+                                        @endif
+                                        <div class="flex flex-col">
+                                            <span class="text-sm font-medium text-gray-700">{{ $addon->name }}</span>
+                                            @if($addon->description)
+                                                <span class="text-xs text-gray-500 line-clamp-1">{{ $addon->description }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @if($addon->price)
+                                        <span class="text-sm font-semibold text-green-600">Rs. {{ number_format($addon->price, 2) }}</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Timestamps -->
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">

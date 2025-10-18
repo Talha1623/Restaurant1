@@ -32,24 +32,22 @@ class MenuCategoryController extends Controller
                 $query->where('is_active', $request->status === 'active');
             }
 
-            // Pagination
-            $perPage = $request->get('per_page', 15);
-            $categories = $query->orderBy('name')->paginate($perPage);
+            // Get categories without pagination
+            $categories = $query->orderBy('name')->get(['id', 'name', 'image']);
+
+            // Format categories with only required fields
+            $formattedCategories = $categories->map(function($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'image' => $category->image ? asset('storage/' . $category->image) : null
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Menu categories retrieved successfully',
-                'data' => [
-                    'categories' => $categories->items(),
-                    'pagination' => [
-                        'current_page' => $categories->currentPage(),
-                        'last_page' => $categories->lastPage(),
-                        'per_page' => $categories->perPage(),
-                        'total' => $categories->total(),
-                        'from' => $categories->firstItem(),
-                        'to' => $categories->lastItem()
-                    ]
-                ]
+                'data' => $formattedCategories
             ]);
 
         } catch (\Exception $e) {

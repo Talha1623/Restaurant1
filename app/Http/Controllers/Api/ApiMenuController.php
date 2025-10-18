@@ -73,7 +73,7 @@ class ApiMenuController extends Controller
                 ];
             });
             
-            // Static options
+            // Static options - Complete form data
             $formOptions = [
                 'currencies' => [
                     ['value' => 'GBP', 'label' => 'GBP (£)'],
@@ -82,8 +82,12 @@ class ApiMenuController extends Controller
                     ['value' => 'PKR', 'label' => 'PKR (₨)']
                 ],
                 'status_options' => [
-                    ['value' => 'active', 'label' => 'Active'],
-                    ['value' => 'inactive', 'label' => 'Inactive']
+                    ['value' => 'active', 'label' => 'Active ✓'],
+                    ['value' => 'inactive', 'label' => 'Inactive ✗']
+                ],
+                'availability_options' => [
+                    ['value' => true, 'label' => 'Available ✓'],
+                    ['value' => false, 'label' => 'Not Available ✗']
                 ],
                 'spice_levels' => [
                     ['value' => 0, 'label' => 'No Spice'],
@@ -92,11 +96,53 @@ class ApiMenuController extends Controller
                     ['value' => 3, 'label' => 'Hot (3⭐)'],
                     ['value' => 4, 'label' => 'Very Hot (4⭐)'],
                     ['value' => 5, 'label' => 'Extreme (5⭐)']
+                ],
+                'dietary_flags' => [
+                    ['value' => 'Vegetarian', 'label' => '🥗 Vegetarian'],
+                    ['value' => 'Vegan', 'label' => '🌱 Vegan'],
+                    ['value' => 'Halal', 'label' => '☪️ Halal'],
+                    ['value' => 'Kosher', 'label' => '✡️ Kosher'],
+                    ['value' => 'Gluten-Free', 'label' => '🌾 Gluten-Free'],
+                    ['value' => 'Dairy-Free', 'label' => '🥛 Dairy-Free'],
+                    ['value' => 'Nut-Free', 'label' => '🥜 Nut-Free'],
+                    ['value' => 'Non-Vegetarian', 'label' => '🍖 Non-Vegetarian'],
+                    ['value' => 'Contains Gluten', 'label' => 'Contains Gluten'],
+                    ['value' => 'Contains Dairy', 'label' => 'Contains Dairy'],
+                    ['value' => 'Contains Nuts', 'label' => 'Contains Nuts']
+                ],
+                'tags' => [
+                    ['value' => 'Popular', 'label' => '⭐ Popular'],
+                    ['value' => 'Premium', 'label' => '👑 Premium'],
+                    ['value' => 'Spicy', 'label' => '🌶️ Spicy'],
+                    ['value' => 'Healthy', 'label' => '💚 Healthy'],
+                    ['value' => 'Kids Favorite', 'label' => '👶 Kids Favorite'],
+                    ['value' => 'New', 'label' => '🆕 New'],
+                    ['value' => 'Bestseller', 'label' => '🔥 Bestseller'],
+                    ['value' => 'Chef Special', 'label' => '👨‍🍳 Chef Special'],
+                    ['value' => 'Authentic', 'label' => '✨ Authentic'],
+                    ['value' => 'Budget', 'label' => '💰 Budget'],
+                    ['value' => 'Organic', 'label' => '🌿 Organic']
+                ],
+                'preparation_time_options' => [
+                    ['value' => 10, 'label' => '10 minutes'],
+                    ['value' => 15, 'label' => '15 minutes'],
+                    ['value' => 20, 'label' => '20 minutes'],
+                    ['value' => 25, 'label' => '25 minutes'],
+                    ['value' => 30, 'label' => '30 minutes'],
+                    ['value' => 45, 'label' => '45 minutes'],
+                    ['value' => 60, 'label' => '1 hour']
+                ],
+                'calorie_ranges' => [
+                    ['value' => '0-200', 'label' => 'Low (0-200 cal)'],
+                    ['value' => '200-400', 'label' => 'Medium (200-400 cal)'],
+                    ['value' => '400-600', 'label' => 'High (400-600 cal)'],
+                    ['value' => '600+', 'label' => 'Very High (600+ cal)']
                 ]
             ];
             
             return response()->json([
                 'success' => true,
+                'message' => '✅ Form data loaded successfully',
                 'data' => [
                     'restaurant' => [
                         'id' => $restaurant->id,
@@ -106,15 +152,28 @@ class ApiMenuController extends Controller
                     'categories' => $formattedCategories,
                     'second_flavors' => $formattedSecondFlavors,
                     'addons' => $formattedAddons,
-                    'form_options' => $formOptions
+                    'form_options' => $formOptions,
+                    'fields_info' => [
+                        'required_fields' => ['name', 'price', 'currency', 'category_id'],
+                        'optional_fields' => ['description', 'ingredients', 'vat_price', 'second_flavor_id', 'status', 'is_available', 'spice_level', 'preparation_time', 'calories', 'tags', 'allergen', 'dietary_flags', 'cold_drinks_addons', 'images'],
+                        'image_upload' => [
+                            'max_images' => 5,
+                            'max_size' => '2MB per image',
+                            'formats' => ['jpeg', 'png', 'jpg', 'gif']
+                        ]
+                    ]
                 ]
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('Form data fetch failed', [
+                'restaurant_id' => $restaurantId,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch form data',
-                'error' => $e->getMessage()
+                'message' => '❌ Failed to load form data. Please try again.'
             ], 500);
         }
     }
@@ -126,13 +185,47 @@ class ApiMenuController extends Controller
     {
         try {
             $menus = Menu::where('restaurant_id', $restaurantId)
-                ->with(['images', 'category', 'secondFlavor'])
+                ->with(['images', 'category' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }, 'secondFlavor' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }, 'addons' => function($query) {
+                    $query->where('is_active', 1)->select('restaurant_addons.id', 'restaurant_addons.name', 'restaurant_addons.price', 'restaurant_addons.image');
+                }])
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
             
+            // Remove pivot data from addons and format category/secondFlavor
+            $menus->getCollection()->transform(function ($menu) {
+                if ($menu->addons && $menu->addons->count() > 0) {
+                    $menu->addons = $menu->addons->map(function ($addon) {
+                        return [
+                            'id' => $addon->id,
+                            'name' => $addon->name,
+                            'price' => $addon->price,
+                            'image' => $addon->image ? asset('storage/' . $addon->image) : null
+                        ];
+                    })->values();
+                } else {
+                    $menu->addons = [];
+                }
+                
+                // Format category
+                if ($menu->category) {
+                    $menu->category->image_url = $menu->category->image ? asset('storage/' . $menu->category->image) : null;
+                }
+                
+                // Format secondFlavor
+                if ($menu->secondFlavor) {
+                    $menu->secondFlavor->image_url = $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null;
+                }
+                
+                return $menu;
+            });
+            
             return response()->json([
                 'success' => true,
-                'data' => $menus
+                'data' => $menus->items()
             ]);
             
         } catch (\Exception $e) {
@@ -168,16 +261,20 @@ class ApiMenuController extends Controller
                 'tags' => 'nullable|string',
                 'allergen' => 'nullable|string|max:255',
                 'dietary_flags' => 'nullable|string',
-                'cold_drinks_addons' => 'nullable|array',
-                'cold_drinks_addons.*' => 'integer|exists:restaurant_addons,id',
+                'cold_drinks_addons' => 'nullable',
+                'addon_ids' => 'nullable|string',
+                'addonlist' => 'nullable|string',
                 'images' => 'nullable|array|max:5',
                 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -230,11 +327,91 @@ class ApiMenuController extends Controller
                 $data['dietary_flags'] = null;
             }
             
-            // Handle cold drinks addons
-            $data['cold_drinks_addons'] = $request->cold_drinks_addons ?? [];
+            // Handle cold drinks addons - support multiple formats
+            if ($request->has('cold_drinks_addons')) {
+                $addons = $request->cold_drinks_addons;
+                
+                // Format 1: JSON string "[{\"id\":1},{\"id\":2}]"
+                if (is_string($addons) && (strpos($addons, '[') === 0 && strpos($addons, ']') === strlen($addons) - 1)) {
+                    $jsonArray = json_decode($addons, true);
+                    if (is_array($jsonArray) && isset($jsonArray[0]) && is_array($jsonArray[0]) && isset($jsonArray[0]['id'])) {
+                        // Object array format: [{"id":1}, {"id":2}]
+                        $data['cold_drinks_addons'] = array_map(function($item) {
+                            return $item['id'];
+                        }, $jsonArray);
+                    } else {
+                        // Simple array format: [1,2,3]
+                        $data['cold_drinks_addons'] = array_map('intval', $jsonArray);
+                    }
+                }
+                // Format 2: Comma-separated string "14,20,16"
+                elseif (is_string($addons)) {
+                    $data['cold_drinks_addons'] = array_map('intval', array_filter(explode(',', $addons)));
+                }
+                // Format 3: Object array [{"id":1}, {"id":2}]
+                elseif (is_array($addons) && isset($addons[0]) && is_array($addons[0]) && isset($addons[0]['id'])) {
+                    $data['cold_drinks_addons'] = array_map(function($item) {
+                        return $item['id'];
+                    }, $addons);
+                }
+                // Format 4: Simple array [1, 2, 3]
+                else {
+                    $data['cold_drinks_addons'] = $addons;
+                }
+            } else {
+                $data['cold_drinks_addons'] = [];
+            }
             
             // Create menu item
             $menu = Menu::create($data);
+            
+            // Handle addon linking (support both JSON and form-data)
+            $addonIds = [];
+            
+            
+            // Check for form-data array format: addon_ids[0], addon_ids[1], etc.
+            $allInputs = $request->all();
+            foreach ($allInputs as $key => $value) {
+                if (strpos($key, 'addon_ids[') === 0) {
+                    $addonIds[] = (int)$value;
+                }
+            }
+            
+            // If no form-data array found, check for regular addon_ids or addonlist
+            if (empty($addonIds)) {
+                $addonIdsString = $request->input('addon_ids') ?: $request->input('addonlist');
+                if ($addonIdsString) {
+                    if (is_array($addonIdsString)) {
+                        // Array format: [11, 12, 13]
+                        $addonIds = array_map('intval', $addonIdsString);
+                    } elseif (is_string($addonIdsString)) {
+                        // Check if it's JSON array format: "[14,13]"
+                        if (strpos($addonIdsString, '[') === 0 && strpos($addonIdsString, ']') === strlen($addonIdsString) - 1) {
+                            $jsonArray = json_decode($addonIdsString, true);
+                            if (is_array($jsonArray)) {
+                                $addonIds = array_map('intval', $jsonArray);
+                            } else {
+                                // Comma-separated format: "11,12,13"
+                                $addonIds = array_map('intval', array_filter(explode(',', $addonIdsString)));
+                            }
+                        } else {
+                            // Comma-separated format: "11,12,13"
+                            $addonIds = array_map('intval', array_filter(explode(',', $addonIdsString)));
+                        }
+                    } else {
+                        // Single value
+                        $addonIds = [(int)$addonIdsString];
+                    }
+                }
+            }
+            
+            
+            if (!empty($addonIds)) {
+                $menu->addons()->attach($addonIds);
+            }
+            
+            // Also sync cold_drinks_addons to pivot table
+            $this->syncColdDrinksAddons($menu, $data['cold_drinks_addons'] ?? []);
             
             // Handle multiple image uploads
             if ($request->hasFile('images')) {
@@ -249,7 +426,7 @@ class ApiMenuController extends Controller
             }
 
             // Load relationships for response
-            $menu->load(['images', 'restaurant', 'secondFlavor']);
+            $menu->load(['images', 'restaurant', 'secondFlavor', 'addons']);
 
             return response()->json([
                 'success' => true,
@@ -266,6 +443,119 @@ class ApiMenuController extends Controller
     }
 
     /**
+     * Remove specific addon from menu
+     */
+    public function removeAddon(Request $request)
+    {
+        try {
+            // Validation rules
+            $validator = Validator::make($request->all(), [
+                'menu_id' => 'required|integer|exists:menus,id',
+                'addon_id' => 'required|integer|exists:restaurant_addons,id'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '⚠️ Please provide valid menu ID and addon ID.',
+                    'errors' => $validator->errors()
+                ], 200);
+            }
+
+            $menuId = $request->input('menu_id');
+            $addonId = $request->input('addon_id');
+
+            // Find the menu
+            $menu = Menu::find($menuId);
+            if (!$menu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ Menu not found. Please check the menu ID.'
+                ], 200);
+            }
+
+            // Check if addon exists
+            $addon = \App\Models\RestaurantAddon::find($addonId);
+            if (!$addon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ Addon not found. Please check the addon ID.'
+                ], 200);
+            }
+
+            // Check if addon is linked to this menu (check both pivot table and cold_drinks_addons field)
+            $isLinkedInPivot = $menu->addons()->where('restaurant_addon_id', $addonId)->exists();
+            $isLinkedInField = in_array($addonId, $menu->cold_drinks_addons ?? []);
+            
+            if (!$isLinkedInPivot && !$isLinkedInField) {
+                return response()->json([
+                    'success' => false,
+                    'message' => '❌ This addon is not linked to the specified menu.'
+                ], 200);
+            }
+
+            // Remove the addon from menu
+            $menu->addons()->detach($addonId);
+
+            // Update cold_drinks_addons field to remove this addon
+            $currentAddons = $menu->cold_drinks_addons ?? [];
+            $updatedAddons = array_filter($currentAddons, function($id) use ($addonId) {
+                return $id != $addonId;
+            });
+            $menu->update(['cold_drinks_addons' => array_values($updatedAddons)]);
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Addon removed successfully from menu!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Remove addon failed', [
+                'menu_id' => $request->input('menu_id'),
+                'addon_id' => $request->input('addon_id'),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Failed to remove addon. Please try again later.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Sync cold drinks addons to pivot table
+     */
+    private function syncColdDrinksAddons($menu, $coldDrinksAddons)
+    {
+        \Log::info('syncColdDrinksAddons called', [
+            'menu_id' => $menu->id,
+            'addons' => $coldDrinksAddons,
+            'is_empty' => empty($coldDrinksAddons),
+            'is_array' => is_array($coldDrinksAddons)
+        ]);
+        
+        if (!empty($coldDrinksAddons) && is_array($coldDrinksAddons)) {
+            try {
+                // First detach all existing addons, then attach new ones
+                $detached = $menu->addons()->detach();
+                \Log::info('Detached addons', ['count' => $detached]);
+                
+                $menu->addons()->attach($coldDrinksAddons);
+                \Log::info('Attached addons', ['addon_ids' => $coldDrinksAddons]);
+                
+                // Verify sync
+                $count = $menu->addons()->count();
+                \Log::info('Addon count after sync', ['count' => $count]);
+            } catch (\Exception $e) {
+                \Log::error('Error syncing addons: ' . $e->getMessage());
+            }
+        } else {
+            \Log::warning('Cold drinks addons empty or not array');
+        }
+    }
+
+    /**
      * Display the specified menu item
      */
     public function show($restaurantId, $menuId)
@@ -273,8 +563,20 @@ class ApiMenuController extends Controller
         try {
             $menu = Menu::where('restaurant_id', $restaurantId)
                 ->where('id', $menuId)
-                ->with(['images', 'restaurant', 'category', 'secondFlavor'])
+                ->with(['images', 'category' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }, 'secondFlavor' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }])
                 ->firstOrFail();
+            
+            // Format category and secondFlavor
+            if ($menu->category) {
+                $menu->category->image_url = $menu->category->image ? asset('storage/' . $menu->category->image) : null;
+            }
+            if ($menu->secondFlavor) {
+                $menu->secondFlavor->image_url = $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null;
+            }
             
             return response()->json([
                 'success' => true,
@@ -317,16 +619,18 @@ class ApiMenuController extends Controller
                 'tags' => 'nullable|string',
                 'allergen' => 'nullable|string|max:255',
                 'dietary_flags' => 'nullable|string',
-                'cold_drinks_addons' => 'nullable|array',
-                'cold_drinks_addons.*' => 'integer|exists:restaurant_addons,id',
+                'cold_drinks_addons' => 'nullable',
                 'images' => 'nullable|array|max:5',
                 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -351,13 +655,46 @@ class ApiMenuController extends Controller
                 $data['dietary_flags'] = array_filter($dietaryFlags);
             }
             
-            // Handle cold drinks addons
+            // Handle cold drinks addons - support multiple formats
             if ($request->has('cold_drinks_addons')) {
-                $data['cold_drinks_addons'] = $request->cold_drinks_addons;
+                $addons = $request->cold_drinks_addons;
+                
+                // Format 1: JSON string "[{\"id\":1},{\"id\":2}]"
+                if (is_string($addons) && (strpos($addons, '[') === 0 && strpos($addons, ']') === strlen($addons) - 1)) {
+                    $jsonArray = json_decode($addons, true);
+                    if (is_array($jsonArray) && isset($jsonArray[0]) && is_array($jsonArray[0]) && isset($jsonArray[0]['id'])) {
+                        // Object array format: [{"id":1}, {"id":2}]
+                        $data['cold_drinks_addons'] = array_map(function($item) {
+                            return $item['id'];
+                        }, $jsonArray);
+                    } else {
+                        // Simple array format: [1,2,3]
+                        $data['cold_drinks_addons'] = array_map('intval', $jsonArray);
+                    }
+                }
+                // Format 2: Comma-separated string "14,20,16"
+                elseif (is_string($addons)) {
+                    $data['cold_drinks_addons'] = array_map('intval', array_filter(explode(',', $addons)));
+                }
+                // Format 3: Object array [{"id":1}, {"id":2}]
+                elseif (is_array($addons) && isset($addons[0]) && is_array($addons[0]) && isset($addons[0]['id'])) {
+                    $data['cold_drinks_addons'] = array_map(function($item) {
+                        return $item['id'];
+                    }, $addons);
+                }
+                // Format 4: Simple array [1, 2, 3]
+                else {
+                    $data['cold_drinks_addons'] = $addons;
+                }
             }
             
             // Update menu item
             $menu->update($data);
+            
+            // Sync cold_drinks_addons to pivot table if provided
+            if (isset($data['cold_drinks_addons'])) {
+                $this->syncColdDrinksAddons($menu, $data['cold_drinks_addons']);
+            }
             
             // Handle new image uploads
             if ($request->hasFile('images')) {
@@ -371,20 +708,21 @@ class ApiMenuController extends Controller
                 }
             }
 
-            // Load relationships for response
-            $menu->load(['images', 'restaurant']);
-
             return response()->json([
                 'success' => true,
-                'message' => 'Menu item updated successfully',
-                'data' => $menu
+                'message' => '🎉 Menu updated successfully! Your changes have been saved.'
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('Menu update failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update menu item',
-                'error' => $e->getMessage()
+                'message' => '❌ Failed to update menu item. Please try again later.'
             ], 500);
         }
     }
@@ -505,16 +843,20 @@ class ApiMenuController extends Controller
                 'tags' => 'nullable|string',
                 'allergen' => 'nullable|string|max:255',
                 'dietary_flags' => 'nullable|string',
-                'cold_drinks_addons' => 'nullable|array',
-                'cold_drinks_addons.*' => 'integer|exists:restaurant_addons,id',
+                'cold_drinks_addons' => 'nullable',
+                'addon_ids' => 'nullable|string',
+                'addonlist' => 'nullable|string',
                 'images' => 'nullable|array|max:5',
                 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -568,11 +910,91 @@ class ApiMenuController extends Controller
                 $data['dietary_flags'] = null;
             }
             
-            // Handle cold drinks addons
-            $data['cold_drinks_addons'] = $request->cold_drinks_addons ?? [];
+            // Handle cold drinks addons - support multiple formats
+            if ($request->has('cold_drinks_addons')) {
+                $addons = $request->cold_drinks_addons;
+                
+                // Format 1: JSON string "[{\"id\":1},{\"id\":2}]"
+                if (is_string($addons) && (strpos($addons, '[') === 0 && strpos($addons, ']') === strlen($addons) - 1)) {
+                    $jsonArray = json_decode($addons, true);
+                    if (is_array($jsonArray) && isset($jsonArray[0]) && is_array($jsonArray[0]) && isset($jsonArray[0]['id'])) {
+                        // Object array format: [{"id":1}, {"id":2}]
+                        $data['cold_drinks_addons'] = array_map(function($item) {
+                            return $item['id'];
+                        }, $jsonArray);
+                    } else {
+                        // Simple array format: [1,2,3]
+                        $data['cold_drinks_addons'] = array_map('intval', $jsonArray);
+                    }
+                }
+                // Format 2: Comma-separated string "14,20,16"
+                elseif (is_string($addons)) {
+                    $data['cold_drinks_addons'] = array_map('intval', array_filter(explode(',', $addons)));
+                }
+                // Format 3: Object array [{"id":1}, {"id":2}]
+                elseif (is_array($addons) && isset($addons[0]) && is_array($addons[0]) && isset($addons[0]['id'])) {
+                    $data['cold_drinks_addons'] = array_map(function($item) {
+                        return $item['id'];
+                    }, $addons);
+                }
+                // Format 4: Simple array [1, 2, 3]
+                else {
+                    $data['cold_drinks_addons'] = $addons;
+                }
+            } else {
+                $data['cold_drinks_addons'] = [];
+            }
             
             // Create menu item
             $menu = Menu::create($data);
+            
+            // Handle addon linking (support both JSON and form-data)
+            $addonIds = [];
+            
+            
+            // Check for form-data array format: addon_ids[0], addon_ids[1], etc.
+            $allInputs = $request->all();
+            foreach ($allInputs as $key => $value) {
+                if (strpos($key, 'addon_ids[') === 0) {
+                    $addonIds[] = (int)$value;
+                }
+            }
+            
+            // If no form-data array found, check for regular addon_ids or addonlist
+            if (empty($addonIds)) {
+                $addonIdsString = $request->input('addon_ids') ?: $request->input('addonlist');
+                if ($addonIdsString) {
+                    if (is_array($addonIdsString)) {
+                        // Array format: [11, 12, 13]
+                        $addonIds = array_map('intval', $addonIdsString);
+                    } elseif (is_string($addonIdsString)) {
+                        // Check if it's JSON array format: "[14,13]"
+                        if (strpos($addonIdsString, '[') === 0 && strpos($addonIdsString, ']') === strlen($addonIdsString) - 1) {
+                            $jsonArray = json_decode($addonIdsString, true);
+                            if (is_array($jsonArray)) {
+                                $addonIds = array_map('intval', $jsonArray);
+                            } else {
+                                // Comma-separated format: "11,12,13"
+                                $addonIds = array_map('intval', array_filter(explode(',', $addonIdsString)));
+                            }
+                        } else {
+                            // Comma-separated format: "11,12,13"
+                            $addonIds = array_map('intval', array_filter(explode(',', $addonIdsString)));
+                        }
+                    } else {
+                        // Single value
+                        $addonIds = [(int)$addonIdsString];
+                    }
+                }
+            }
+            
+            
+            if (!empty($addonIds)) {
+                $menu->addons()->attach($addonIds);
+            }
+            
+            // Also sync cold_drinks_addons to pivot table
+            $this->syncColdDrinksAddons($menu, $data['cold_drinks_addons'] ?? []);
             
             // Handle multiple image uploads
             if ($request->hasFile('images')) {
@@ -587,7 +1009,7 @@ class ApiMenuController extends Controller
             }
 
             // Load relationships for response
-            $menu->load(['images', 'restaurant', 'secondFlavor']);
+            $menu->load(['images', 'restaurant', 'secondFlavor', 'addons']);
 
             return response()->json([
                 'success' => true,
@@ -609,7 +1031,13 @@ class ApiMenuController extends Controller
     public function indexWithoutRestaurantId(Request $request)
     {
         try {
-            $query = Menu::with(['images', 'restaurant', 'category', 'secondFlavor']);
+            $query = Menu::with(['images', 'category' => function($query) {
+                $query->select('id', 'name', 'image');
+            }, 'secondFlavor' => function($query) {
+                $query->select('id', 'name', 'image');
+            }, 'addons' => function($query) {
+                $query->where('is_active', 1)->select('restaurant_addons.id', 'restaurant_addons.name', 'restaurant_addons.price', 'restaurant_addons.image');
+            }]);
 
             // Auto-detect restaurant_id from authenticated user
             $user = $request->user();
@@ -647,21 +1075,39 @@ class ApiMenuController extends Controller
             // Pagination
             $perPage = $request->get('per_page', 15);
             $menus = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            
+            // Remove pivot data from addons and format category/secondFlavor
+            $menus->getCollection()->transform(function ($menu) {
+                if ($menu->addons && $menu->addons->count() > 0) {
+                    $menu->addons = $menu->addons->map(function ($addon) {
+                        return [
+                            'id' => $addon->id,
+                            'name' => $addon->name,
+                            'price' => $addon->price,
+                            'image' => $addon->image ? asset('storage/' . $addon->image) : null
+                        ];
+                    })->values();
+                } else {
+                    $menu->addons = [];
+                }
+                
+                // Format category
+                if ($menu->category) {
+                    $menu->category->image_url = $menu->category->image ? asset('storage/' . $menu->category->image) : null;
+                }
+                
+                // Format secondFlavor
+                if ($menu->secondFlavor) {
+                    $menu->secondFlavor->image_url = $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null;
+                }
+                
+                return $menu;
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Menus retrieved successfully',
-                'data' => [
-                    'menus' => $menus->items(),
-                    'pagination' => [
-                        'current_page' => $menus->currentPage(),
-                        'last_page' => $menus->lastPage(),
-                        'per_page' => $menus->perPage(),
-                        'total' => $menus->total(),
-                        'from' => $menus->firstItem(),
-                        'to' => $menus->lastItem()
-                    ]
-                ]
+                'data' => $menus->items()
             ]);
 
         } catch (\Exception $e) {
@@ -680,8 +1126,20 @@ class ApiMenuController extends Controller
     {
         try {
             $menu = Menu::where('id', $menuId)
-                ->with(['images', 'restaurant', 'category', 'secondFlavor'])
+                ->with(['images', 'category' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }, 'secondFlavor' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }])
                 ->firstOrFail();
+            
+            // Format category and secondFlavor
+            if ($menu->category) {
+                $menu->category->image_url = $menu->category->image ? asset('storage/' . $menu->category->image) : null;
+            }
+            if ($menu->secondFlavor) {
+                $menu->secondFlavor->image_url = $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null;
+            }
             
             return response()->json([
                 'success' => true,
@@ -723,16 +1181,18 @@ class ApiMenuController extends Controller
                 'tags' => 'nullable|string',
                 'allergen' => 'nullable|string|max:255',
                 'dietary_flags' => 'nullable|string',
-                'cold_drinks_addons' => 'nullable|array',
-                'cold_drinks_addons.*' => 'integer|exists:restaurant_addons,id',
+                'cold_drinks_addons' => 'nullable',
                 'images' => 'nullable|array|max:5',
                 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -853,16 +1313,18 @@ class ApiMenuController extends Controller
                 'tags' => 'nullable|string',
                 'allergen' => 'nullable|string|max:255',
                 'dietary_flags' => 'nullable|string',
-                'cold_drinks_addons' => 'nullable|array',
-                'cold_drinks_addons.*' => 'integer|exists:restaurant_addons,id',
+                'cold_drinks_addons' => 'nullable',
                 'images' => 'nullable|array|max:5',
                 'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -893,7 +1355,7 @@ class ApiMenuController extends Controller
             if (!$menu) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Menu item not found'
+                    'message' => '❌ Menu item not found. Please check the menu ID and try again.'
                 ], 200);
             }
             
@@ -936,9 +1398,39 @@ class ApiMenuController extends Controller
                 $data['dietary_flags'] = array_filter($dietaryFlags);
             }
             
-            // Handle cold drinks addons
+            // Handle cold drinks addons - support multiple formats
             if ($request->has('cold_drinks_addons')) {
-                $data['cold_drinks_addons'] = $request->cold_drinks_addons;
+                $addons = $request->cold_drinks_addons;
+                
+                // Format 1: JSON string "[{\"id\":1},{\"id\":2}]"
+                if (is_string($addons) && (strpos($addons, '[') === 0 && strpos($addons, ']') === strlen($addons) - 1)) {
+                    $jsonArray = json_decode($addons, true);
+                    if (is_array($jsonArray) && isset($jsonArray[0]) && is_array($jsonArray[0]) && isset($jsonArray[0]['id'])) {
+                        // Object array format: [{"id":1}, {"id":2}]
+                        $data['cold_drinks_addons'] = array_map(function($item) {
+                            return $item['id'];
+                        }, $jsonArray);
+                    } else {
+                        // Simple array format: [1,2,3]
+                        $data['cold_drinks_addons'] = array_map('intval', $jsonArray);
+                    }
+                }
+                // Format 2: Comma-separated string "14,20,16"
+                elseif (is_string($addons)) {
+                    $data['cold_drinks_addons'] = array_map('intval', array_filter(explode(',', $addons)));
+                }
+                // Format 3: Object array [{"id":1}, {"id":2}]
+                elseif (is_array($addons) && isset($addons[0]) && is_array($addons[0]) && isset($addons[0]['id'])) {
+                    $data['cold_drinks_addons'] = array_map(function($item) {
+                        return $item['id'];
+                    }, $addons);
+                }
+                // Format 4: Simple array [1, 2, 3]
+                else {
+                    $data['cold_drinks_addons'] = $addons;
+                }
+            } else {
+                $data['cold_drinks_addons'] = [];
             }
             
             // Handle image uploads
@@ -965,31 +1457,30 @@ class ApiMenuController extends Controller
             // Update the menu
             $menu->update($data);
             
-            // Load relationships for response
-            $menu->load(['images', 'restaurant', 'category', 'secondFlavor']);
+            // Sync cold_drinks_addons to pivot table using the helper method
+            $this->syncColdDrinksAddons($menu, $data['cold_drinks_addons'] ?? []);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Menu item updated successfully',
-                'data' => $menu
+                'message' => '🎉 Menu updated successfully! Your changes have been saved.'
             ]);
             
         } catch (\Illuminate\Validation\ValidationException $ve) {
             return response()->json([
                 'success' => false,
-                'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                'message' => '⚠️ Please provide valid data to update the menu item.'
             ], 200);
             
         } catch (\Exception $e) {
+            \Log::error('Menu update failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update menu item',
-                'error' => $e->getMessage(),
-                'debug' => [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString()
-                ]
+                'message' => '❌ Failed to update menu item. Please try again later.'
             ], 500);
         }
     }
@@ -1009,9 +1500,12 @@ class ApiMenuController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -1026,13 +1520,83 @@ class ApiMenuController extends Controller
             ]);
             
             // Check if menu exists
-            $menu = Menu::with(['images', 'restaurant', 'category', 'secondFlavor'])->find($menuId);
+            $menu = Menu::with(['images', 'category' => function($query) {
+                $query->select('id', 'name', 'image');
+            }, 'secondFlavor' => function($query) {
+                $query->select('id', 'name', 'image');
+            }, 'addons' => function($query) {
+                $query->where('is_active', 1)->select('restaurant_addons.id', 'restaurant_addons.name', 'restaurant_addons.price', 'restaurant_addons.image');
+            }])->find($menuId);
             
             if (!$menu) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Menu item not found'
                 ], 200);
+            }
+            
+            // Debug logging
+            \Log::info('Menu View - Checking Addons', [
+                'menu_id' => $menu->id,
+                'pivot_count' => $menu->addons ? $menu->addons->count() : 0,
+                'cold_drinks_addons' => $menu->cold_drinks_addons,
+                'cold_drinks_type' => gettype($menu->cold_drinks_addons),
+                'is_array' => is_array($menu->cold_drinks_addons),
+                'is_empty' => empty($menu->cold_drinks_addons)
+            ]);
+            
+            // Transform addons to remove pivot data and format properly
+            if ($menu->addons && $menu->addons->count() > 0) {
+                \Log::info('Loading addons from pivot table', ['count' => $menu->addons->count()]);
+                $menu->addons = $menu->addons->map(function ($addon) {
+                    return [
+                        'id' => $addon->id,
+                        'name' => $addon->name,
+                        'price' => $addon->price,
+                        'image' => $addon->image ? asset('storage/' . $addon->image) : null
+                    ];
+                })->values();
+            } else {
+                \Log::info('Pivot table empty, checking cold_drinks_addons field');
+                // If no addons in pivot table, try to load from cold_drinks_addons field
+                $coldDrinksAddons = $menu->cold_drinks_addons ?? [];
+                \Log::info('Cold drinks addons value', [
+                    'raw' => $coldDrinksAddons,
+                    'type' => gettype($coldDrinksAddons),
+                    'is_array' => is_array($coldDrinksAddons),
+                    'is_empty' => empty($coldDrinksAddons)
+                ]);
+                
+                if (!empty($coldDrinksAddons) && is_array($coldDrinksAddons)) {
+                    \Log::info('Loading addons from cold_drinks_addons', ['addon_ids' => $coldDrinksAddons]);
+                    $addons = \App\Models\RestaurantAddon::whereIn('id', $coldDrinksAddons)
+                        ->where('is_active', true)
+                        ->get(['id', 'name', 'price', 'image']);
+                    
+                    \Log::info('Addons loaded from database', ['count' => $addons->count()]);
+                    
+                    $menu->addons = $addons->map(function ($addon) {
+                        return [
+                            'id' => $addon->id,
+                            'name' => $addon->name,
+                            'price' => $addon->price,
+                            'image' => $addon->image ? asset('storage/' . $addon->image) : null
+                        ];
+                    })->values();
+                } else {
+                    \Log::warning('No addons found in either pivot table or cold_drinks_addons field');
+                    $menu->addons = [];
+                }
+            }
+            
+            // Format category image URL
+            if ($menu->category) {
+                $menu->category->image_url = $menu->category->image ? asset('storage/' . $menu->category->image) : null;
+            }
+            
+            // Format secondFlavor image URL
+            if ($menu->secondFlavor) {
+                $menu->secondFlavor->image_url = $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null;
             }
             
             return response()->json([
@@ -1127,7 +1691,11 @@ class ApiMenuController extends Controller
                 ->whereHas('restaurant', function($q) {
                     $q->where('status', 'active');
                 })
-                ->with(['restaurant', 'category', 'secondFlavor'])
+                ->with(['category' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }, 'secondFlavor' => function($query) {
+                    $query->select('id', 'name', 'image');
+                }])
                 ->orderBy('price', 'asc')
                 ->get();
 
@@ -1150,20 +1718,13 @@ class ApiMenuController extends Controller
                     'category' => $menu->category ? [
                         'id' => $menu->category->id,
                         'name' => $menu->category->name,
+                        'image' => $menu->category->image ? asset('storage/' . $menu->category->image) : null,
                     ] : null,
                     'second_flavor' => $menu->secondFlavor ? [
                         'id' => $menu->secondFlavor->id,
                         'name' => $menu->secondFlavor->name,
+                        'image' => $menu->secondFlavor->image ? asset('storage/' . $menu->secondFlavor->image) : null,
                     ] : null,
-                    'restaurant' => [
-                        'id' => $menu->restaurant->id,
-                        'business_name' => $menu->restaurant->business_name,
-                        'logo' => $menu->restaurant->logo ? asset('storage/' . $menu->restaurant->logo) : null,
-                        'city' => $menu->restaurant->city,
-                        'phone' => $menu->restaurant->phone,
-                        'opening_time' => $menu->restaurant->opening_time,
-                        'closing_time' => $menu->restaurant->closing_time,
-                    ],
                     'created_at' => $menu->created_at,
                 ];
             });
@@ -1201,9 +1762,12 @@ class ApiMenuController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -1220,13 +1784,12 @@ class ApiMenuController extends Controller
                 ], 404);
             }
 
-            // Get all menus for this second flavor with restaurant details
+            // Get all menus for this second flavor
             $menus = Menu::where('second_flavor_id', $secondFlavorId)
                 ->where('status', 'active')
                 ->whereHas('restaurant', function($query) {
                     $query->where('status', 'active');
                 })
-                ->with(['restaurant'])
                 ->orderBy('price', 'asc')
                 ->get()
                 ->map(function($menu) {
@@ -1244,20 +1807,6 @@ class ApiMenuController extends Controller
                         'calories' => $menu->calories,
                         'tags' => $menu->tags ?? [],
                         'dietary_flags' => $menu->dietary_flags ?? [],
-                        'restaurant' => [
-                            'id' => $menu->restaurant->id,
-                            'business_name' => $menu->restaurant->business_name,
-                            'legal_name' => $menu->restaurant->legal_name,
-                            'logo' => $menu->restaurant->logo ? asset('storage/' . $menu->restaurant->logo) : null,
-                            'city' => $menu->restaurant->city,
-                            'phone' => $menu->restaurant->phone,
-                            'email' => $menu->restaurant->email,
-                            'opening_time' => $menu->restaurant->opening_time,
-                            'closing_time' => $menu->restaurant->closing_time,
-                            'min_order' => $menu->restaurant->min_order,
-                            'delivery_zone' => $menu->restaurant->delivery_zone,
-                            'cuisine_tags' => $menu->restaurant->cuisine_tags,
-                        ],
                         'created_at' => $menu->created_at,
                     ];
                 });
@@ -1308,9 +1857,12 @@ class ApiMenuController extends Controller
             ]);
 
             if ($validator->fails()) {
+                \Log::info('Validation failed:', $validator->errors()->toArray());
+                \Log::info('Request data:', $request->all());
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please provide valid restaurant ID and category ID to add menu item'
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
                 ], 200);
             }
 
@@ -1333,7 +1885,6 @@ class ApiMenuController extends Controller
                 ->whereHas('restaurant', function($query) {
                     $query->where('status', 'active');
                 })
-                ->with(['restaurant'])
                 ->orderBy('price', 'asc')
                 ->get()
                 ->map(function($menu) {
@@ -1351,20 +1902,6 @@ class ApiMenuController extends Controller
                         'calories' => $menu->calories,
                         'tags' => $menu->tags ?? [],
                         'dietary_flags' => $menu->dietary_flags ?? [],
-                        'restaurant' => [
-                            'id' => $menu->restaurant->id,
-                            'business_name' => $menu->restaurant->business_name,
-                            'legal_name' => $menu->restaurant->legal_name,
-                            'logo' => $menu->restaurant->logo ? asset('storage/' . $menu->restaurant->logo) : null,
-                            'city' => $menu->restaurant->city,
-                            'phone' => $menu->restaurant->phone,
-                            'email' => $menu->restaurant->email,
-                            'opening_time' => $menu->restaurant->opening_time,
-                            'closing_time' => $menu->restaurant->closing_time,
-                            'min_order' => $menu->restaurant->min_order,
-                            'delivery_zone' => $menu->restaurant->delivery_zone,
-                            'cuisine_tags' => $menu->restaurant->cuisine_tags,
-                        ],
                         'created_at' => $menu->created_at,
                     ];
                 });
@@ -1399,6 +1936,111 @@ class ApiMenuController extends Controller
                 ]
             ], 500);
         }
+    }
+
+    /**
+     * Get menu item with addons by ID
+     */
+    public function getMenuWithAddons(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'menu_id' => 'required|integer|exists:menus,id'
+            ]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors();
+                $firstError = $errors->first();
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => $firstError
+                ], 200);
+            }
+
+            $menuId = $request->input('menu_id');
+            
+            // Get menu with addons relationship
+            $menu = Menu::with(['addons' => function($query) {
+                    $query->where('is_active', 1);
+                }])
+                ->find($menuId);
+
+            if (!$menu) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Menu item not found'
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Menu item with addons retrieved successfully',
+                'data' => $this->formatMenuWithAddons($menu, true)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve menu item',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Format menu item with addons
+     */
+    private function formatMenuWithAddons($menu, $includeRestaurant = false)
+    {
+        $formattedMenu = [
+            'id' => $menu->id,
+            'restaurant_id' => $menu->restaurant_id,
+            'name' => $menu->name,
+            'category_id' => $menu->category_id,
+            'price' => $menu->price,
+            'vat_price' => $menu->vat_price,
+            'currency' => $menu->currency ?? 'GBP',
+            'status' => $menu->status == 'active' ? 1 : 0,
+            'spice_level' => $menu->spice_level ?? 0,
+            'preparation_time' => $menu->preparation_time,
+            'calories' => $menu->calories,
+            'tags' => is_string($menu->tags) ? $menu->tags : implode(', ', $menu->tags ?? []),
+            'description' => $menu->description,
+            'ingredients' => $menu->ingredients,
+            'allergen' => $menu->allergen,
+            'dietary_flags' => is_string($menu->dietary_flags) ? $menu->dietary_flags : implode(', ', $menu->dietary_flags ?? []),
+            'is_available' => $menu->is_available ? 1 : 0,
+            'image' => $menu->image,
+        ];
+
+        // Add addons if relationship is loaded
+        if ($menu->relationLoaded('addons')) {
+            $formattedMenu['addons'] = $menu->addons->map(function($addon) use ($menu) {
+                return [
+                    'menu_id' => $menu->id,
+                    'addid' => $addon->id,
+                    'name' => $addon->name,
+                    'price' => $addon->price,
+                    'currency' => 'GBP',
+                    'is_available' => $addon->is_active ? 1 : 0,
+                    'description' => $addon->description ?? ''
+                ];
+            })->values()->toArray();
+        }
+
+        // Add restaurant details if requested
+        if ($includeRestaurant && $menu->relationLoaded('restaurant')) {
+            $formattedMenu['restaurant'] = [
+                'id' => $menu->restaurant->id,
+                'business_name' => $menu->restaurant->business_name,
+                'legal_name' => $menu->restaurant->legal_name,
+                'city' => $menu->restaurant->city,
+                'phone' => $menu->restaurant->phone,
+            ];
+        }
+
+        return $formattedMenu;
     }
 
 }

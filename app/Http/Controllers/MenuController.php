@@ -190,7 +190,7 @@ class MenuController extends Controller
      */
     public function show(Menu $menu)
     {
-        $menu->load(['category', 'secondFlavor']);
+        $menu->load(['category', 'secondFlavor', 'addons']);
         return view('menus.show', compact('menu'));
     }
 

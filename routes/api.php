@@ -230,6 +230,12 @@ Route::prefix('menus')->middleware('auth:sanctum')->group(function () {
     Route::delete('/delete', [App\Http\Controllers\Api\ApiMenuController::class, 'destroyWithoutRestaurantId']);
     Route::get('/{id}', [App\Http\Controllers\Api\ApiMenuController::class, 'showWithoutRestaurantId']);
     Route::put('/{id}', [App\Http\Controllers\Api\ApiMenuController::class, 'updateWithoutRestaurantId']);
+    
+    // Get menu with addons
+    Route::post('/with-addons', [App\Http\Controllers\Api\ApiMenuController::class, 'getMenuWithAddons']);
+    
+    // Remove addon from menu
+    Route::post('/remove-addon', [App\Http\Controllers\Api\ApiMenuController::class, 'removeAddon']);
 });
 
 // Test route
@@ -352,6 +358,9 @@ Route::post('/menus/by-category', [App\Http\Controllers\Api\ApiMenuController::c
 
 // Menu by Second Flavor API Route (Public - for customers)
 Route::post('/menus/by-flavor', [App\Http\Controllers\Api\ApiMenuController::class, 'getMenusBySecondFlavor']);
+
+// Get menu with addons (Public - for customers)
+Route::post('/menus/with-addons', [App\Http\Controllers\Api\ApiMenuController::class, 'getMenuWithAddons']);
 
 // Menu Category Management API Routes
 Route::prefix('menu-categories')->group(function () {

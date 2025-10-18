@@ -262,21 +262,48 @@ class RestaurantController extends Controller
             // STEP 3: Add menus + certificates (with debug)
             $menus = \App\Models\Menu::where('restaurant_id', $restaurantId)
                 ->where('status', 'active')
+                ->with(['addons' => function($query) {
+                    $query->where('is_active', true);
+                }])
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function($menu) {
-                    return [
+                    $menuData = [
                         'id' => $menu->id,
+                        'restaurant_id' => $menu->restaurant_id,
                         'name' => $menu->name,
+                        'category_id' => $menu->category_id,
                         'description' => $menu->description,
                         'price' => $menu->price,
                         'vat_price' => $menu->vat_price,
-                        'currency' => $menu->currency,
-                        'status' => $menu->status,
-                        'is_available' => $menu->is_available,
-                        'image_url' => $menu->image ? asset('storage/' . $menu->image) : null,
+                        'currency' => $menu->currency ?? 'GBP',
+                        'status' => $menu->status == 'active' ? 1 : 0,
+                        'is_available' => $menu->is_available ? 1 : 0,
+                        'spice_level' => $menu->spice_level ?? 0,
+                        'preparation_time' => $menu->preparation_time,
+                        'calories' => $menu->calories,
+                        'tags' => is_string($menu->tags) ? $menu->tags : implode(', ', $menu->tags ?? []),
+                        'ingredients' => $menu->ingredients,
+                        'allergen' => $menu->allergen,
+                        'dietary_flags' => is_string($menu->dietary_flags) ? $menu->dietary_flags : implode(', ', $menu->dietary_flags ?? []),
+                        'image' => $menu->image,
                         'created_at' => $menu->created_at
                     ];
+                    
+                    // Add addons
+                    $menuData['addons'] = $menu->addons->map(function($addon) use ($menu) {
+                        return [
+                            'menu_id' => $menu->id,
+                            'addid' => $addon->id,
+                            'name' => $addon->name,
+                            'price' => $addon->price,
+                            'currency' => 'GBP',
+                            'is_available' => $addon->is_active ? 1 : 0,
+                            'description' => $addon->description ?? ''
+                        ];
+                    })->values()->toArray();
+                    
+                    return $menuData;
                 });
 
             // Get certificates for the restaurant

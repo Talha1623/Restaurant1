@@ -16,6 +16,12 @@ class RestaurantAddon extends Model
         'is_active'
     ];
 
+    protected $hidden = [
+        'pivot', // Hide pivot data from JSON responses
+        'description', // Hide description from addon list
+        'is_active' // Hide is_active from addon list
+    ];
+
     protected $casts = [
         'is_active' => 'boolean'
     ];
@@ -23,5 +29,14 @@ class RestaurantAddon extends Model
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    /**
+     * Get the menus that use this addon.
+     */
+    public function menus()
+    {
+        return $this->belongsToMany(Menu::class, 'menu_addon', 'restaurant_addon_id', 'menu_id')
+                    ->withTimestamps();
     }
 }
